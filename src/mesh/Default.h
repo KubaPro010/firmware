@@ -36,6 +36,7 @@
 #define default_mqtt_password ""
 #define default_mqtt_root "msh/PL"
 #define default_do_not_send_prvate_messages_over_mqtt true
+#define default_mqtt_pass_enabled true
 #define default_sniffer_enabled false
 #define default_local_stats_over_mesh_enabled true
 #define default_local_stats_extended_over_mesh_enabled true

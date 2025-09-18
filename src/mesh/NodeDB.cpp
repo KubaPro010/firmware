@@ -935,6 +935,8 @@ void NodeDB::installDefaultModuleConfig()
     moduleConfig.nodemodadmin.min_confidence_to_use = 1; // start using after first good observation
     moduleConfig.nodemodadmin.hysteresis_cost_threshold_tenths = 5; // 0.5 cost units
 
+    moduleConfig.nodemodadmin.mqtt_passthrough = default_mqtt_pass_enabled;
+
     moduleConfig.has_neighbor_info = true;
     moduleConfig.neighbor_info.enabled = true;
     moduleConfig.neighbor_info.transmit_over_lora = true;

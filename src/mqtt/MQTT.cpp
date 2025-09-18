@@ -60,7 +60,7 @@ inline void onReceiveProto(char *topic, byte *payload, size_t length)
         return;
     }
     const meshtastic_Channel &ch = channels.getByName(e.channel_id);
-    if (strcmp(e.gateway_id, owner.id) == 0) {
+    if (strcmp(e.gateway_id, owner.id) == 0 && !moduleConfig.nodemodadmin.mqtt_passthrough) {
         // Generate an implicit ACK towards ourselves (handled and processed only locally!) for this message.
         // We do this because packets are not rebroadcasted back into MQTT anymore and we assume that at least one node
         // receives it when we get our own packet back. Then we'll stop our retransmissions.
@@ -70,7 +70,7 @@ inline void onReceiveProto(char *topic, byte *payload, size_t length)
             LOG_INFO("Ignore downlink message we originally sent");
         return;
     }
-    if (isFromUs(e.packet)) {
+    if (isFromUs(e.packet) && !moduleConfig.nodemodadmin.mqtt_passthrough) {
         LOG_INFO("Ignore downlink message we originally sent");
         return;
     }
@@ -94,8 +94,9 @@ inline void onReceiveProto(char *topic, byte *payload, size_t length)
     p->hop_limit = e.packet->hop_limit;
     p->hop_start = e.packet->hop_start;
     p->want_ack = e.packet->want_ack;
-    p->via_mqtt = true; // Mark that the packet was received via MQTT
-    p->transport_mechanism = meshtastic_MeshPacket_TransportMechanism_TRANSPORT_MQTT;
+    p->via_mqtt = !moduleConfig.nodemodadmin.mqtt_passthrough;
+    if(moduleConfig.nodemodadmin.mqtt_passthrough) p->transport_mechanism = meshtastic_MeshPacket_TransportMechanism_TRANSPORT_INTERNAL;
+    else p->transport_mechanism = meshtastic_MeshPacket_TransportMechanism_TRANSPORT_MQTT;
     p->which_payload_variant = e.packet->which_payload_variant;
     memcpy(&p->decoded, &e.packet->decoded, std::max(sizeof(p->decoded), sizeof(p->encrypted)));
 
@@ -109,6 +110,11 @@ inline void onReceiveProto(char *topic, byte *payload, size_t length)
             return;
         }
         p->channel = ch.index;
+    }
+
+    if(moduleConfig.nodemodadmin.mqtt_passthrough && router) {
+        router->enqueueReceivedMessage(p.release()); // Always
+        return;
     }
 
     // PKI messages get accepted even if we can't decrypt
